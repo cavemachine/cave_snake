@@ -174,8 +174,6 @@ void position_move() {
 
 void initialize_window() {
     mainwindow = initscr();
-    mvwaddstr(mainwindow, 1, 3, "cave snake");
-    mvwaddstr(mainwindow, 22, 3, "score: ");    
     frame_x = 40;
     frame_y = 20;
     frame = subwin(mainwindow, frame_y, frame_x, 2, 2);
@@ -184,13 +182,18 @@ void initialize_window() {
     box(frame,0,0);
 
     noecho();
+    cbreak();
     curs_set(0);    
 }
 
-void initialize_timer() {
+void nothing() {
+
+}
+void initialize_timer(int speed) {
     struct itimerval it;
+    srand(time(NULL));
     it.it_value.tv_sec = 0;
-    it.it_value.tv_usec = 200000;
+    it.it_value.tv_usec = speed;
     it.it_interval = it.it_value;
     setitimer(ITIMER_REAL, &it, NULL);
     signal(SIGALRM,position_move);
@@ -220,20 +223,64 @@ void initialize_snake() {
     body_append(head, 'o');
 }
 
+void intro_menu() {
+    
+    mvwaddstr(mainwindow, 1, 3, "cave snake");
+    mvwaddstr(frame, 1, 5, "Game commands:");
+    mvwaddstr(frame, 3, 5, "n: new game");
+    mvwaddstr(frame, 4, 5, "p: pause");
+    mvwaddstr(frame, 5, 5, "q: quit");
+    mvwaddstr(frame, 6, 5, "arrow keys: controller");
+    mvwaddstr(mainwindow, 22, 3, "score: -");
+    
+    refresh();
+    char ch;
+    while (ch != 'n') {
+	ch = getch();
+	if (ch == 'q') {
+	    endwin();
+	    printf("BYE\n");
+	    exit(0);
+	}
+	    
+    }
+    werase(frame);
+    box(frame,0,0);
+
+}
+
 
 int main() {
-        
-    srand(time(NULL));
+    int timer_speed = 200000;
+    bool paused = false;
+    char direction_copy;
     
     initialize_window();
+    
+    intro_menu();
 
     initialize_snake();
 
-    initialize_timer();
+    initialize_timer(timer_speed);
 
     char ch;
-    while (ch = getch() != 'q' ) {
-	if (getch() == '[') {  // arrows: \033 (escape), '[', A B C or D.
+    while (ch != 'q' ) {
+	ch = getch();
+
+	if (ch  == 'p') {
+	    if (paused == false) {
+		direction_copy = direction;
+		initialize_timer(0);
+		paused = true;
+	    } else {
+		direction = direction_copy;
+		initialize_timer(timer_speed);
+		paused = false;
+	    }
+	}
+	
+	if (ch == '\033') {  // arrows: \033 (escape), '[', A B C or D.
+	    getch();
 	    switch ( getch() ) {
 	    case 'A':
 		if (direction != 'd' && controller_delay == false) {
@@ -258,12 +305,14 @@ int main() {
 		    direction = 'l';
 		    controller_delay = true;
 		}		
-		break;	    
+		break;
 	    default:
 		break;
-	    }	
-	} 
+	    }
+	}
+
     }
     endwin();
 }
+
 
