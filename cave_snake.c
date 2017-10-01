@@ -32,6 +32,11 @@ struct node *head;
 //----------------------------
 
 void body_append(struct node *_head, char data) {
+    /* - the snake is a linked-list starting with the head. 
+       - find the last node of the snake, and the one before the last node
+         to discover in which direction is the snake going; based on this,
+         insert a new node in the correct position on the game frame and in the
+	 last place of the linked-list. */
     struct node *tmp = malloc(sizeof(struct node));
 
     struct node *last;
@@ -81,36 +86,42 @@ void random_apple() {
     int apple_x;
     int apple_y;
 
-    int r = rand() % 10;
+    int r = rand() % 10; // 10% of chance to generate an apple
     if (r == 1) {
 	apple_y = rand() % 18 + 1;
 	apple_x = rand() % 38 + 1;
 	if (apples[apple_y][apple_x] == false) {
 	    apples[apple_y][apple_x] = true;
-	    mvwaddch(frame, apple_y, apple_x, 'M');
+	    mvwaddch(frame, apple_y, apple_x, 'M'); 
 	}
     }
 }
 
 void print_all(struct node *_head) {
+    /* - checks first if there is an apple at head position, if so
+         grows snake body and add 20 to score. 
+       - visits all items in the linked-list snake and add to frame.
+       - check if the position of the visited item is equal the head position
+         if so call game_over(). (the head touched the body);
+       - also check if head touched any screen boarders. if so call game_over();
+       - calculate the score, and eventually redraw frame borders in case it 
+         get corrupted somehow, and print the score.
+       - refresh mainwindow to show all the changes. */
     
     bool gameover = false;
     bool bodyappend = false;
-
     
     while (_head != NULL) {
-	if (mvwinch(frame, _head->y, _head->x) == 'M') {
+	if (mvwinch(frame, _head->y, _head->x) == 'M') { 
 	    apples[_head->y][_head->x] = false;
 	    bodyappend = true;
 	    score += 20;
 	}
 	mvwaddch(frame, _head->y, _head->x, _head->data);
-	_head = _head->previous;
-	
+	_head = _head->previous;	
       	if (_head != NULL && _head->x == head->x && _head->y == head->y) { 
 	    gameover = true;
 	}
-
     }
     wrefresh(frame);
     if (gameover == true) { game_over(); };
@@ -118,7 +129,7 @@ void print_all(struct node *_head) {
     if (head->x == 0 || head->x == frame_x - 1 || head->y == 0 || head->y == frame_y - 1) {
 	game_over();
     }
-    controller_delay = false;
+    controller_delay = false; 
     score_sub += 1;
     if (score_sub == 5) {
 	score += 2;
@@ -130,6 +141,11 @@ void print_all(struct node *_head) {
 }
 
 void position_move() {
+    /* erases the drawing of snake of last position and
+       moves the last snake piece to one place ahead of
+       the snake head; then call random_apples() to create apples and
+       print_all() to print the snake in the new position to the frame */
+    
     struct node *last;
     struct node *tmp;
     tmp = head;
@@ -186,9 +202,6 @@ void initialize_window() {
     curs_set(0);    
 }
 
-void nothing() {
-
-}
 void initialize_timer(int speed) {
     struct itimerval it;
     srand(time(NULL));
@@ -200,6 +213,10 @@ void initialize_timer(int speed) {
 }
 
 void initialize_snake() {
+    /* - creates the snake head, the first piece of body of the snake;
+       - it's necessary at least the head, and one piece of body to call 
+         append function.
+       - finally appends 4 piece of body to it */
     head = malloc(sizeof(struct node));
     struct node *body_first = malloc(sizeof(struct node));
     
@@ -226,11 +243,10 @@ void initialize_snake() {
 void intro_menu() {
     
     mvwaddstr(mainwindow, 1, 3, "cave snake");
-    mvwaddstr(frame, 1, 5, "Game commands:");
     mvwaddstr(frame, 3, 5, "n: new game");
     mvwaddstr(frame, 4, 5, "p: pause");
     mvwaddstr(frame, 5, 5, "q: quit");
-    mvwaddstr(frame, 6, 5, "arrow keys: controller");
+    mvwaddstr(frame, 7, 5, "arrow keys: controller");
     mvwaddstr(mainwindow, 22, 3, "score: -");
     
     refresh();
